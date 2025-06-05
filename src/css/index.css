@@ -45,6 +45,17 @@ td.box-boundary-col {
     color: #ff0000;
 }
 
+.difficulty-report {
+    margin-top: 1rem;
+    padding: 0.8rem;
+    background-color: #f8f9fa;
+    border: 1px solid #ccc;
+    font-size: 0.95rem;
+    border-radius: 6px;
+    line-height: 1.6;
+}
+
+
 button {
     font-size: 16px;
     margin: 0 1em;

@@ -3,6 +3,8 @@
 import { SudokuRenderer } from './SudokuRenderer.js';
 import { solvingSpeed } from './SudokuSolver.js';
 import { SudokuGenerator } from './SudokuGenerator.js';
+import { SudokuAnalyzer } from './SudokuAnalyzer.js';
+
 
 // Import custom stylesheets
 import '../css/index.css';
@@ -65,7 +67,30 @@ btnSolve.addEventListener('click', async evt => {
 
 btnGenerate.addEventListener('click', evt => {
     const sudokuGenerator = new SudokuGenerator();
-    sudokuRenderer.setSudoku(sudokuGenerator.generateSudoku());
+    const generatedSudoku = sudokuGenerator.generateSudoku();
+    sudokuRenderer.setSudoku(generatedSudoku);
     sudokuRenderer.renderSudoku();
     sudokuStatus.textContent = '';
+
+    // 分析难度
+    const analyzer = new SudokuAnalyzer(generatedSudoku);
+    const result = analyzer.analyze();
+
+    const reportDiv = document.getElementById('difficulty-report');
+    reportDiv.innerHTML = `
+    <strong>难度评估：<span style="color:${getColor(result.difficulty)}">${result.difficulty}</span></strong><br>
+    DFS解题步数：${result.steps}<br>
+    分支点数量：${result.branches}<br>
+    唯一解：${result.uniqueSolution ? '✅ 是' : '❌ 否'}<br>
+    简单可填数：${result.simpleFills}
+`;
 });
+
+function getColor(difficulty) {
+    switch (difficulty) {
+        case '简单': return 'green';
+        case '中等': return 'orange';
+        case '困难': return 'red';
+        default: return 'black';
+    }
+}
