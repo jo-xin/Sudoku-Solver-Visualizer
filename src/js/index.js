@@ -94,6 +94,7 @@ btnGenerate.addEventListener('click', evt => {
     const sudokuGenerator = new SudokuGenerator();
     const generatedSudoku = sudokuGenerator.generateSudoku();
     sudokuRenderer.setSudoku(generatedSudoku);
+    sudokuRenderer.setEditable(true);
     sudokuRenderer.renderSudoku();
     sudokuStatus.textContent = '';
 
