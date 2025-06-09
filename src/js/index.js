@@ -66,7 +66,7 @@ btnClear.addEventListener('click', evt => {
 // });
 
 btnSolve.addEventListener('click', async evt => {
-    sudokuRenderer.setEditable(false);
+    sudokuRenderer.setEditable(true);
     sudokuStatus.textContent = '';
     sudokuStatus.classList.value = '';
     evt.target.disabled = true;
@@ -94,8 +94,8 @@ btnGenerate.addEventListener('click', evt => {
     const sudokuGenerator = new SudokuGenerator();
     const generatedSudoku = sudokuGenerator.generateSudoku();
     sudokuRenderer.setSudoku(generatedSudoku);
-    sudokuRenderer.setEditable(true);
     sudokuRenderer.renderSudoku();
+    sudokuRenderer.setEditable(true);
     sudokuStatus.textContent = '';
 
     // 分析难度
@@ -105,7 +105,7 @@ btnGenerate.addEventListener('click', evt => {
     const reportDiv = document.getElementById('difficulty-report');
     reportDiv.innerHTML = `
     <strong>难度评估：<span style="color:${getColor(result.difficulty)}">${result.difficulty}</span></strong><br>
-    DFS解题步数：${result.steps}<br>
+    DF解题步数：${result.steps}<br>
     分支点数量：${result.branches}<br>
     唯一解：${result.uniqueSolution ? '✅ 是' : '❌ 否'}<br>
     简单可填数：${result.simpleFills}
