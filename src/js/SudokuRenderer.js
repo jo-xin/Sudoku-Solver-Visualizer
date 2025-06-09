@@ -8,13 +8,14 @@ class SudokuRenderer {
         this.sudokuHTMLElement = sudokuHTMLElement;
         this.sudoku = new Sudoku();
         this.solver = new SudokuSolver(this.sudoku, this.renderCell);
+        this.originalBoard = this.cloneBoard(this.sudoku.board);
     }
 
-    /**
-     * Render the sudoku on the HTML view
-     */
+    cloneBoard(board) {
+        return board.map(row => [...row]);
+    }
+
     renderSudoku() {
-        // Remove all children of the sudokuHTMLElement
         while (this.sudokuHTMLElement.firstChild) {
             this.sudokuHTMLElement.removeChild(this.sudokuHTMLElement.firstChild);
         }
@@ -28,7 +29,7 @@ class SudokuRenderer {
                 sudokuCell.id = `cell-${i}-${j}`;
 
                 sudokuCell.addEventListener('keydown', evt => {
-                    let [row, col] = evt.target.id.match(/\d/g).map(num => parseInt(num));
+                    let [row, col] = evt.target.id.match(/\d/g).map(Number);
                     let input = parseInt(evt.key);
 
                     if (evt.target.textContent.length > 0 || isNaN(input)) {
@@ -36,65 +37,46 @@ class SudokuRenderer {
                             evt.target.classList.remove('given-num');
                             evt.target.classList.add('discovered-num');
                             this.sudoku.board[row][col] = 0;
-                        }
-                        else {
+                        } else {
                             evt.preventDefault();
                         }
-                    }
-                    else {
+                    } else {
                         if (this.sudoku.isNumberValid(row, col, input)) {
                             evt.target.classList.remove('discovered-num');
                             evt.target.classList.add('given-num');
                             this.sudoku.board[row][col] = input;
-                        }
-                        else {
+                        } else {
                             evt.preventDefault();
                         }
                     }
                 });
 
-                // Highlight row, column and box where the focused cell is in
                 sudokuCell.addEventListener('focusin', evt => {
-                    let [row, col] = evt.target.id.match(/\d/g).map(num => parseInt(num));
+                    let [row, col] = evt.target.id.match(/\d/g).map(Number);
                     let rowStart = row - row % 3;
-                    let rowEnd = rowStart + 3;
                     let colStart = col - col % 3;
-                    let colEnd = colStart + 3;
-
-                    for (let i = 0; i < this.sudoku.board[row].length; i++) {
-                        let cellRow = document.getElementById(`cell-${row}-${i}`);
-                        let cellCol = document.getElementById(`cell-${i}-${col}`);
-                        cellRow.classList.add('focused-cell');
-                        cellCol.classList.add('focused-cell');
+                    for (let k = 0; k < 9; k++) {
+                        document.getElementById(`cell-${row}-${k}`).classList.add('focused-cell');
+                        document.getElementById(`cell-${k}-${col}`).classList.add('focused-cell');
                     }
-
-                    for (let x = rowStart; x < rowEnd; x++) {
-                        for (let y = colStart; y < colEnd; y++) {
-                            let cellBox = document.getElementById(`cell-${x}-${y}`);
-                            cellBox.classList.add('focused-cell');
+                    for (let x = rowStart; x < rowStart + 3; x++) {
+                        for (let y = colStart; y < colStart + 3; y++) {
+                            document.getElementById(`cell-${x}-${y}`).classList.add('focused-cell');
                         }
                     }
                 });
 
-                // Remove highlight of row, column and box where the focused cell was in
                 sudokuCell.addEventListener('focusout', evt => {
-                    let [row, col] = evt.target.id.match(/\d/g).map(num => parseInt(num));
+                    let [row, col] = evt.target.id.match(/\d/g).map(Number);
                     let rowStart = row - row % 3;
-                    let rowEnd = rowStart + 3;
                     let colStart = col - col % 3;
-                    let colEnd = colStart + 3;
-
-                    for (let i = 0; i < this.sudoku.board[row].length; i++) {
-                        let cellRow = document.getElementById(`cell-${row}-${i}`);
-                        let cellCol = document.getElementById(`cell-${i}-${col}`);
-                        cellRow.classList.remove('focused-cell');
-                        cellCol.classList.remove('focused-cell');
+                    for (let k = 0; k < 9; k++) {
+                        document.getElementById(`cell-${row}-${k}`).classList.remove('focused-cell');
+                        document.getElementById(`cell-${k}-${col}`).classList.remove('focused-cell');
                     }
-
-                    for (let x = rowStart; x < rowEnd; x++) {
-                        for (let y = colStart; y < colEnd; y++) {
-                            let cellBox = document.getElementById(`cell-${x}-${y}`);
-                            cellBox.classList.remove('focused-cell');
+                    for (let x = rowStart; x < rowStart + 3; x++) {
+                        for (let y = colStart; y < colStart + 3; y++) {
+                            document.getElementById(`cell-${x}-${y}`).classList.remove('focused-cell');
                         }
                     }
                 });
@@ -102,17 +84,12 @@ class SudokuRenderer {
                 if (num !== 0) {
                     sudokuCell.textContent = num;
                     sudokuCell.classList.add('given-num');
-                }
-                else {
+                } else {
                     sudokuCell.classList.add('discovered-num');
                 }
 
-                if (i === 2 || i === 5) {
-                    sudokuCell.classList.add('box-boundary-row');
-                }
-                if (j === 2 || j === 5) {
-                    sudokuCell.classList.add('box-boundary-col');
-                }
+                if (i === 2 || i === 5) sudokuCell.classList.add('box-boundary-row');
+                if (j === 2 || j === 5) sudokuCell.classList.add('box-boundary-col');
 
                 sudokuRow.appendChild(sudokuCell);
             }
@@ -120,43 +97,53 @@ class SudokuRenderer {
         }
     }
 
-    /**
-     * Change the text content of the cell specified by cellId 
-     * @param {String} cellId The HTML id of the cell whose text context will be changed
-     * @param {String|Number} value The new text/value for the cell
-     */
     renderCell(cellId, value) {
-        let cell = document.getElementById(cellId);
-        cell.textContent = value;
+        const cell = document.getElementById(cellId);
+        if (cell) cell.textContent = value;
     }
 
     async renderSolve() {
+        // 保存题目副本，供 clear 使用
+        this.originalBoard = this.cloneBoard(this.sudoku.board);
         return await this.solver.solve();
     }
 
-    /**
-     * Re-renders the sudoku
-     */
     clear() {
         this.solver.cancelSolve();
-        this.sudoku.clear();
-        this.renderSudoku();
+
+        for (let i = 0; i < 9; i++) {
+            for (let j = 0; j < 9; j++) {
+                const cell = document.getElementById(`cell-${i}-${j}`);
+                if (this.originalBoard[i][j] === 0) {
+                    this.sudoku.board[i][j] = 0;
+                    if (cell) {
+                        cell.textContent = '';
+                        cell.classList.remove('given-num');
+                        cell.classList.add('discovered-num');
+                    }
+                } else {
+                    this.sudoku.board[i][j] = this.originalBoard[i][j];
+                    if (cell) {
+                        cell.textContent = this.originalBoard[i][j];
+                        cell.classList.remove('discovered-num');
+                        cell.classList.add('given-num');
+                    }
+                }
+            }
+        }
     }
 
     setSudoku(sudoku) {
         this.sudoku = sudoku;
+        this.originalBoard = this.cloneBoard(sudoku.board);
         this.solver.setSudoku(sudoku);
     }
 
-    /**
-     * Makes the sudoku editable or uneditable by the user
-     * @param {Boolean} editable If true the sudoku can be edited by the user, otherwise it can't be edited
-     */
     setEditable(editable) {
-        for (let i = 0; i < this.sudoku.board.length; i++) {
-            for (let j = 0; j < this.sudoku.board.length; j++) {
-                let currentCell = document.getElementById(`cell-${i}-${j}`);
-                currentCell.contentEditable = editable;
+        for (let i = 0; i < 9; i++) {
+            for (let j = 0; j < 9; j++) {
+                let cell = document.getElementById(`cell-${i}-${j}`);
+                if (cell) cell.contentEditable = editable;
             }
         }
     }
