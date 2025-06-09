@@ -47,23 +47,48 @@ btnClear.addEventListener('click', evt => {
     btnSolve.disabled = false;
 });
 
+// btnSolve.addEventListener('click', async evt => {
+//     sudokuRenderer.setEditable(false);
+//     sudokuStatus.textContent = '';
+//     sudokuStatus.classList.value = '';
+//     evt.target.disabled = true;
+//     if (await sudokuRenderer.renderSolve()) {
+//         if (!sudokuRenderer.solver.wasCanceled) {
+//             sudokuStatus.classList.add('status-success');
+//             sudokuStatus.textContent = 'Solved!';
+//         }
+//     }
+//     else {
+//         sudokuStatus.classList.add('status-failed');
+//         sudokuStatus.textContent = 'Unsolvable!';
+//     }
+//     evt.target.disabled = false;
+// });
+
 btnSolve.addEventListener('click', async evt => {
     sudokuRenderer.setEditable(false);
     sudokuStatus.textContent = '';
     sudokuStatus.classList.value = '';
     evt.target.disabled = true;
-    if (await sudokuRenderer.renderSolve()) {
-        if (!sudokuRenderer.solver.wasCanceled) {
-            sudokuStatus.classList.add('status-success');
-            sudokuStatus.textContent = 'Solved!';
+    try {
+        if (await sudokuRenderer.renderSolve()) {
+            if (sudokuRenderer.solver.wasCanceled) {
+                sudokuStatus.classList.add('status-info');
+                sudokuStatus.textContent = 'Solved was canceled!';
+            }
+            else {
+                sudokuStatus.classList.add('status-success');
+                sudokuStatus.textContent = 'Solved!';
+            }
+        } else {
+            sudokuStatus.classList.add('status-failed');
+            sudokuStatus.textContent = 'Unsolvable!';
         }
+    } finally {
+        evt.target.disabled = false;
     }
-    else {
-        sudokuStatus.classList.add('status-failed');
-        sudokuStatus.textContent = 'Unsolvable!';
-    }
-    evt.target.disabled = false;
 });
+
 
 btnGenerate.addEventListener('click', evt => {
     const sudokuGenerator = new SudokuGenerator();

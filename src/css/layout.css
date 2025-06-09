@@ -25,6 +25,7 @@ body {
         "title"
         "board"
         "slider"
+        "solver-option"
         "buttons"
         "status";
 }
@@ -46,6 +47,21 @@ body {
     display: flex;
     align-items: center;
     margin-top: 1em;
+}
+
+.solver-option-row {
+    grid-area: solver-option;
+    justify-self: center;
+    margin-top: 1em;
+    display: flex;
+    align-items: center;
+}
+
+select {
+    margin-left: 0.5em;
+    padding: 0.5em;
+    border-radius: 0.25em;
+    border: 1px solid #ccc;
 }
 
 .buttons-row {
