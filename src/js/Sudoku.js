@@ -13,6 +13,9 @@ class Sudoku {
             [0, 0, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 0],
         ];
+        this.rows = Array.from({ length: 9 }, () => new Set());
+        this.cols = Array.from({ length: 9 }, () => new Set());
+        this.boxes = Array.from({ length: 9 }, () => new Set());
     }
 
     /**
@@ -82,7 +85,7 @@ class Sudoku {
      * @param {Number} number Number to test if it is possible to place
      * @returns {Boolean} True if the number can be placed, false otherwise
      */
-    isNumberValidBox(row, col, number) {
+    isNumberValidBox1(row, col, number) {
         let rowStart = row - row % 3;
         let rowEnd = rowStart + 3;
         let colStart = col - col % 3;
@@ -97,6 +100,49 @@ class Sudoku {
         }
         return true;
     }
+
+    isNumberValidBox(row, col, number) {
+    const seen = new Set();
+    const rowStart = row - (row % 3);
+    const colStart = col - (col % 3);
+
+    for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+            const cellValue = this.board[rowStart + i][colStart + j];
+            if (cellValue !== 0) {
+                seen.add(cellValue);
+            }
+        }
+    }
+
+    return !seen.has(number);
+}
+    isNumberValid1(row, col, number) {
+        const box = this.getBoxIndex(row, col);
+        return !this.rows[row].has(number) &&
+                !this.cols[col].has(number) &&
+                !this.boxes[box].has(number);
+    }
+
+    setValue(row, col, number) {
+        this.board[row][col] = number;
+        this.rows[row].add(number);
+        this.cols[col].add(number);
+        this.boxes[this.getBoxIndex(row, col)].add(number);
+    }
+
+    unsetValue(row, col) {
+        const number = this.board[row][col];
+        this.board[row][col] = 0;
+        this.rows[row].delete(number);
+        this.cols[col].delete(number);
+        this.boxes[this.getBoxIndex(row, col)].delete(number);
+    }
+
+getBoxIndex(row, col) {
+        return Math.floor(row / 3) * 3 + Math.floor(col / 3);
+    }
+
 
     /**
      * Finds the next empty cell
@@ -113,5 +159,6 @@ class Sudoku {
         return null;
     }
 }
+
 
 export { Sudoku };
