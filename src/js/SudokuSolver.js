@@ -2,8 +2,6 @@
 
 import { Util } from './Util.js';
 
-// Constants for the simulation speed, 
-// each value represents the how much the solve function will sleep in milliseconds
 const solvingSpeed = {
     SLOW: 80,
     AVERAGE: 35,
@@ -19,6 +17,7 @@ class SudokuSolver {
         this.isSolveCanceled = false;
         this.wasCanceled = false;
         this.isBeingSolved = false;
+        this.currentSolverType = 'dfs'; // 添加当前求解器类型
     }
 
     setSudoku(sudoku) {
@@ -30,19 +29,17 @@ class SudokuSolver {
     }
 
     async solve() {
-    const solverType = document.getElementById('solver-type')?.value || 'dfs';
-    console.log(solverType);
-    if (solverType === 'dfs') {
-        return await this.solveDFS();
-    } else if (solverType === 'mrv') {
-        return await this.solveMRV();
-    } else {
-        return await this.solveDFS(); // default to DFS if solver-type is invalid
-    }
+        this.currentSolverType = document.getElementById('solver-type')?.value || 'dfs';
+        if (this.currentSolverType === 'dfs') {
+            return await this.solveDFS();
+        } else if (this.currentSolverType === 'mrv') {
+            return await this.solveMRV();
+        } else {
+            return await this.solveDFS();
+        }
     }
 
     async solveDFS() {
-        console.log("in dfs");
         if (!this.isSolveCanceled) {
             const empty = this.sudoku.findNextEmpty();
             if (!empty) {
@@ -59,7 +56,8 @@ class SudokuSolver {
                         this.renderCell(`cell-${row}-${col}`, possibleNum);
                         await Util.sleep(this.speed);
 
-                        if (await this.solve()) {
+                        // 修复：直接调用solveDFS而不是solve()
+                        if (await this.solveDFS()) {
                             return true;
                         }
 
@@ -78,40 +76,44 @@ class SudokuSolver {
     }
 
     async solveMRV() {
-        console.log("in MRV");
-        if (!this.isSolveCanceled) {
-            const mrvCell = this.findMRVCell();
-            if (!mrvCell || mrvCell.count === 0) {
-                this.wasCanceled = false;
-                this.isBeingSolved = false;
+        if (this.isSolveCanceled) {
+            this.wasCanceled = true;
+            this.isBeingSolved = false;
+            return true;
+        }
+
+        const mrvCell = this.findMRVCell();
+        if (!mrvCell) {
+            // 所有格子都填了，成功结束
+            this.wasCanceled = false;
+            this.isBeingSolved = false;
+            return true;
+        }
+
+        // 如果没有可选值，说明当前路径无解，应回溯（返回 false）
+        if (mrvCell.count === 0) {
+            return false;
+        }
+
+        this.isBeingSolved = true;
+        const candidatesArray = Array.from(mrvCell.candidates);
+
+        for (const possibleNum of candidatesArray) {
+            this.sudoku.board[mrvCell.row][mrvCell.col] = possibleNum;
+            this.renderCell(`cell-${mrvCell.row}-${mrvCell.col}`, possibleNum);
+            await Util.sleep(this.speed);
+
+            if (await this.solveMRV()) {
                 return true;
             }
 
-            this.isBeingSolved = true;
-
-            // Convert candidates to array to allow iteration
-            const candidatesArray = Array.from(mrvCell.candidates);
-            for (const possibleNum of candidatesArray) {
-                this.sudoku.board[mrvCell.row][mrvCell.col] = possibleNum;
-                this.renderCell(`cell-${mrvCell.row}-${mrvCell.col}`, possibleNum);
-                await Util.sleep(this.speed);
-
-                if (await this.solveMRV()) {
-                    return true;
-                }
-
-                this.sudoku.board[mrvCell.row][mrvCell.col] = 0;
-                this.renderCell(`cell-${mrvCell.row}-${mrvCell.col}`, '');
-            }
-
-            this.isBeingSolved = false;
-            return false;
+            this.sudoku.board[mrvCell.row][mrvCell.col] = 0;
+            this.renderCell(`cell-${mrvCell.row}-${mrvCell.col}`, '');
         }
-        this.isSolveCanceled = false;
-        this.wasCanceled = true;
-        this.isBeingSolved = false;
-        return true;
+
+        return false;
     }
+
 
     findMRVCell() {
         let cells = [];
@@ -124,21 +126,19 @@ class SudokuSolver {
                             candidates.add(num);
                         }
                     }
-                    if (candidates.size > 0) {
-                        cells.push({
-                            row: i,
-                            col: j,
-                            candidates: candidates,
-                            count: candidates.size
-                        });
-                    }
+                    // 包含所有空单元格，即使候选数为0
+                    cells.push({
+                        row: i,
+                        col: j,
+                        candidates: candidates,
+                        count: candidates.size
+                    });
                 }
             }
         }
-        if (cells.length === 0) return null; // Return null if no empty cells
+        if (cells.length === 0) return null;
         return cells.reduce((min, current) => (current.count < min.count ? current : min), cells[0]);
     }
-
 
     cancelSolve() {
         if (this.isBeingSolved) {
